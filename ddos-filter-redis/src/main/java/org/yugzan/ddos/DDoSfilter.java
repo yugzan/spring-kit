@@ -1,0 +1,110 @@
+package org.yugzan.ddos;
+
+import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+/**
+ * @author yongzan
+ * @date 2016/7/5
+ */
+@Component
+@ConditionalOnExpression("${spring.ddos.enable:true}")
+public class DDoSfilter extends OncePerRequestFilter{ 
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    
+    @Value("${spring.ddos.hit:10}")
+    private int MAX_HIT_COUNT_PER_IP;
+    
+    @Value("${spring.ddos.hit.interval:300}")
+    private long HIT_TIME_INTERVAL;
+
+    @Value("${spring.ddos.hit.blocktime:60000}")
+    private long BLOCK_TIME;
+
+    @Autowired
+    @Qualifier("ddosRedisTemplate")
+    private RedisTemplate<String, String>  redis;
+    
+    public DDoSfilter() {
+    	logger.info("Init DDoSfilter");
+	}
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
+
+        String remoteAddr = request.getRemoteAddr();
+        String uri = request.getRequestURI();
+        String key = generateKey(remoteAddr, uri);
+
+        if (key != null) {
+        	
+            if ( Objects.nonNull( redis.opsForValue().get(key) ) ) {
+            	
+            	int hitCount = Integer.parseInt(  redis.opsForValue().get(key) ) + 1;
+
+            	if (hitCount >= MAX_HIT_COUNT_PER_IP) {
+                	if(hitCount == MAX_HIT_COUNT_PER_IP) {
+                        redis.opsForValue().set(key, String.valueOf( hitCount++ ));
+            			redis.expire(key, BLOCK_TIME, TimeUnit.MILLISECONDS);
+                	}
+                    notifyAttack(request, response, String.valueOf( redis.getExpire(key, TimeUnit.SECONDS) ));
+                    logger.warn("suspicious access for {}", key);
+                    return;
+                } else {
+                    redis.opsForValue().set(key, String.valueOf( hitCount ));
+        			redis.expire(key, HIT_TIME_INTERVAL, TimeUnit.MILLISECONDS);
+                    logger.info("update statistics for {}, hit account:{}", key, hitCount);
+                }
+            } else {
+                redis.opsForValue().set(key,"0");
+    			redis.expire(key, HIT_TIME_INTERVAL, TimeUnit.MILLISECONDS);
+                logger.info("new statistics for " + key);
+            }
+        	
+        }else {
+//            logger.debug("not monitor address {}", remoteAddr);
+        }
+        filterChain.doFilter(request, response);
+    }
+
+    /**
+     * if the uri is not we want to monitor, then return null
+     * 
+     * @param remoteAddr
+     * @param uri
+     * @return
+     */
+    private String generateKey(String remoteAddr, String uri) {
+        if (uri.endsWith(".js") || uri.endsWith(".css") || uri.endsWith(".jpg")  || uri.endsWith(".ico")
+                || uri.endsWith(".png")) {
+            return null;
+        }
+        return remoteAddr + "-" + uri;
+    }
+
+    private void notifyAttack(HttpServletRequest request, HttpServletResponse response, String expireTime) {
+    	//TODO Custom response
+        try {
+            response.getWriter().write("you are under attack " + expireTime );
+            response.getWriter().flush();
+//            response.sendRedirect("http://tw.yahoo.com");
+        } catch (IOException e) {
+        }
+    }
+}
