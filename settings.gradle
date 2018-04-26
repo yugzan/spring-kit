@@ -1,1 +1,2 @@
-include 'ddos-filter-redis'
+include 'ddos-redis'
+include 'test-modular'
