@@ -1,4 +1,4 @@
-package org.yugzan.ddos;
+package org.yugzan.skit.testmodular;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;

@@ -1,4 +1,4 @@
-package com.github.yugzan.ddos;
+package org.yugzan.skit.ddos;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -50,6 +50,7 @@ public class DDoSfilter extends OncePerRequestFilter{
 
         String remoteAddr = request.getRemoteAddr();
         String uri = request.getRequestURI();
+        //TODO custom key
         String key = generateKey(remoteAddr, uri);
 
         if (key != null) {

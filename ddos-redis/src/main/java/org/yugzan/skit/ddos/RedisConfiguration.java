@@ -1,4 +1,4 @@
-package com.github.yugzan.ddos;
+package org.yugzan.skit.ddos;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
