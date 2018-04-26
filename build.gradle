@@ -1,4 +1,5 @@
 allprojects {
+	group = 'com.github.yugzan'
 	version = "1.0.0"
 	if (JavaVersion.current().isJava8Compatible()) {
 	        tasks.withType(Javadoc) {
@@ -6,7 +7,7 @@ allprojects {
 	        }
 	}
 }
-group = 'com.github.yugzan'
+
 subprojects {
 	apply plugin: 'java'
 	apply plugin: 'maven'
