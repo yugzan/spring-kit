@@ -45,9 +45,7 @@ Build a DDoS filter using redis.
 
 ## Building
 
-Spring Data InfluxDB uses Maven as its build system. 
-
-Spring Data InfluxDB using Gradle.
+Spring Kit - DDoS Redis  uses Gradle as its build system. 
 
 ```bash
 gradle clean build
