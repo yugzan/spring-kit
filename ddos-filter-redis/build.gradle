@@ -17,8 +17,9 @@ apply plugin: 'org.springframework.boot'
 version = '0.0.1'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+group = 'com.github.yugzan.spring-kit'
+archivesBaseName = 'ddos-redis'
 
-archivesBaseName = 'ddos-filter-redis'
 //mainClassName = 'org.yugzan.ddos.Application'
 
 bootRepackage {

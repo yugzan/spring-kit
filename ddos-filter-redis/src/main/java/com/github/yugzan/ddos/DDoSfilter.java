@@ -1,4 +1,4 @@
-package org.yugzan.ddos;
+package com.github.yugzan.ddos;
 
 import java.io.IOException;
 import java.util.Objects;
