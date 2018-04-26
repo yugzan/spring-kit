@@ -6,7 +6,7 @@ allprojects {
 	        }
 	}
 }
-
+group = 'com.github.yugzan'
 subprojects {
 	apply plugin: 'java'
 	apply plugin: 'maven'
