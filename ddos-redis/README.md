@@ -36,8 +36,11 @@ Build a DDoS filter using redis.
 
 * Use `@ComponentScan` to append the ddos filter:
 (Currently, I have no idea to using other method auto import that.)
+    
     ```java
-@ComponentScan("org.yugzan.skit.ddos")
+    
+    @ComponentScan("org.yugzan.skit.ddos")
+    
     ```
 
 ## Building
