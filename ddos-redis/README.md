@@ -32,15 +32,69 @@ Build a DDoS filter using redis.
         ddos.hit.interval: 1000
         ddos.hit.blocktime: 20000
     ```
+###  method 1
+* Use `@EnableDefaultDDoSFilter` is a simple way to load the ddos filter by default operation:
 
+    ```java
+    
+    @EnableDefaultDDoSFilter
+    
+    ```
 
-* Use `@EnableDDoSFilter` to append the ddos filter:
+###  method 2
+* Or you want to customize key or response. Using `@EnableDDoSFilter` to append the ddos filter:
+(do not append two annotation together, that was make confused on `DDoSfilter`.)
+
 
     ```java
     
     @EnableDDoSFilter
     
     ```
+
+    ```java
+      @Configuration
+      public class MyAppConfig {
+        @Bean
+        public DDoSOperator myDDosOperator() {
+          return new MyCustomDDoSOperator();
+        }
+      }
+    ```
+    ```java
+      public class MyCustomDDoSOperator implements DDoSOperator{
+        private RedisTemplate<String, Long> redis;
+        
+        public MyCustomDDoSOperator() {
+          logger.info("Init MyCustomDDoSOperator");
+        }
+        @Override
+        public String generateKey(HttpServletRequest request, HttpServletResponse response) {
+          String remoteAddr = request.getRemoteAddr();
+          String uri = request.getRequestURI();
+          //do some special key rule
+          return String.format("UUID_%s%s", remoteAddr , uri );
+        }
+
+        @Override
+        public void notifyAttack(HttpServletRequest request, HttpServletResponse response, String key) {
+          try {
+            //do some special response rule
+            response.sendRedirect("http://tw.yahoo.com");
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        }
+
+        @Override
+        public void setRedisTemplate(final RedisTemplate<String, Long> redis) {
+          //if need 
+          this.redis = redis;
+        }
+      }
+    ```
+
+
 
 ## Building
 

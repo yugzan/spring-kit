@@ -40,7 +40,14 @@ public class DDoSfilter extends OncePerRequestFilter{
     @Qualifier("ddosRedisTemplate")
     private RedisTemplate<String, Long>  redis;
     
-    public DDoSfilter() {
+    private  DDoSOperator operator;
+    
+    public DDoSfilter(
+    		@Autowired  DDoSOperator operator, 
+    	    @Autowired
+    		@Qualifier("ddosRedisTemplate")  RedisTemplate<String, Long>  redis) {
+    	this.operator = operator;
+    	this.operator.setRedisTemplate(redis);
     	logger.info("Init DDoSfilter");
 	}
 
@@ -48,10 +55,7 @@ public class DDoSfilter extends OncePerRequestFilter{
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        String remoteAddr = request.getRemoteAddr();
-        String uri = request.getRequestURI();
-        //TODO custom key
-        String key = generateKey(remoteAddr, uri);
+        String key = operator.generateKey(request , response);
 
         if (key != null) {
             if ( Objects.nonNull( redis.opsForValue().get(key) ) ) {
@@ -61,7 +65,8 @@ public class DDoSfilter extends OncePerRequestFilter{
                 	if(hitCount == MAX_HIT_COUNT_PER_IP) {
             			redis.expire(key, BLOCK_TIME, TimeUnit.MILLISECONDS);
                 	}
-                    notifyAttack(request, response, String.valueOf( redis.getExpire(key, TimeUnit.SECONDS) ));
+
+                	operator.notifyAttack(request, response, key);
                     logger.warn("suspicious access for {}:hit:[{}]", key, hitCount);
                     return;
                 } else {
@@ -78,30 +83,5 @@ public class DDoSfilter extends OncePerRequestFilter{
 //            logger.debug("not monitor address {}", remoteAddr);
         }
         filterChain.doFilter(request, response);
-    }
-
-    /**
-     * if the uri is not we want to monitor, then return null
-     * 
-     * @param remoteAddr
-     * @param uri
-     * @return
-     */
-    private String generateKey(String remoteAddr, String uri) {
-        if (uri.endsWith(".js") || uri.endsWith(".css") || uri.endsWith(".jpg")  || uri.endsWith(".ico")
-                || uri.endsWith(".png")) {
-            return null;
-        }
-        return remoteAddr + "-" + uri;
-    }
-
-    private void notifyAttack(HttpServletRequest request, HttpServletResponse response, String expireTime) {
-    	//TODO Custom response
-        try {
-            response.getWriter().write("you are under attack " + expireTime );
-            response.getWriter().flush();
-//            response.sendRedirect("http://tw.yahoo.com");
-        } catch (IOException e) {
-        }
     }
 }
