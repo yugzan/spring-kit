@@ -22,9 +22,7 @@ archivesBaseName = 'ddos-redis'
 
 //mainClassName = 'org.yugzan.ddos.Application'
 
-bootRepackage {
-    enabled = false
-}
+bootRepackage {enabled = false}
 
 repositories {
   mavenLocal()

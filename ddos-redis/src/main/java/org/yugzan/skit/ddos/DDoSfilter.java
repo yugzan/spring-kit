@@ -28,7 +28,7 @@ public class DDoSfilter extends OncePerRequestFilter{
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     
     @Value("${spring.ddos.hit:10}")
-    private int MAX_HIT_COUNT_PER_IP;
+    private long MAX_HIT_COUNT_PER_IP;
     
     @Value("${spring.ddos.hit.interval:300}")
     private long HIT_TIME_INTERVAL;
@@ -38,7 +38,7 @@ public class DDoSfilter extends OncePerRequestFilter{
 
     @Autowired
     @Qualifier("ddosRedisTemplate")
-    private RedisTemplate<String, String>  redis;
+    private RedisTemplate<String, Long>  redis;
     
     public DDoSfilter() {
     	logger.info("Init DDoSfilter");
@@ -54,28 +54,24 @@ public class DDoSfilter extends OncePerRequestFilter{
         String key = generateKey(remoteAddr, uri);
 
         if (key != null) {
-        	
             if ( Objects.nonNull( redis.opsForValue().get(key) ) ) {
-            	
-            	int hitCount = Integer.parseInt(  redis.opsForValue().get(key) ) + 1;
-
+            	redis.opsForValue().increment(key, 1);
+            	Long hitCount = redis.opsForValue().get(key);
             	if (hitCount >= MAX_HIT_COUNT_PER_IP) {
                 	if(hitCount == MAX_HIT_COUNT_PER_IP) {
-                        redis.opsForValue().set(key, String.valueOf( hitCount++ ));
             			redis.expire(key, BLOCK_TIME, TimeUnit.MILLISECONDS);
                 	}
                     notifyAttack(request, response, String.valueOf( redis.getExpire(key, TimeUnit.SECONDS) ));
-                    logger.warn("suspicious access for {}", key);
+                    logger.warn("suspicious access for {}:hit:[{}]", key, hitCount);
                     return;
                 } else {
-                    redis.opsForValue().set(key, String.valueOf( hitCount ));
         			redis.expire(key, HIT_TIME_INTERVAL, TimeUnit.MILLISECONDS);
-                    logger.info("update statistics for {}, hit account:{}", key, hitCount);
+                    logger.info("{}, hit:[{}]", key, hitCount);
                 }
             } else {
-                redis.opsForValue().set(key,"0");
+            	redis.opsForValue().increment(key, 0);
     			redis.expire(key, HIT_TIME_INTERVAL, TimeUnit.MILLISECONDS);
-                logger.info("new statistics for " + key);
+                logger.info("new statistics for {}", key);
             }
         	
         }else {

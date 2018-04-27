@@ -1,11 +1,13 @@
 package org.yugzan.skit.ddos;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
@@ -13,6 +15,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * @date 2018/04/26
  */
 @Configuration
+@ConditionalOnExpression("${spring.ddos.enable:true}")
 public class RedisConfiguration {
 	@Value("${spring.redis.host:127.0.0.1}")
 	private String host;
@@ -53,14 +56,13 @@ public class RedisConfiguration {
 		}
 		return factory;
 	}
-	
-	// stringRedisTemplate: defined by method 'stringRedisTemplate'
-		@Bean("ddosRedisTemplate")
-		public RedisTemplate<String, String> redisTemplate() {
-			RedisTemplate<String, String> redisTemplate = new RedisTemplate<String, String>();
-			redisTemplate.setConnectionFactory(jedisConnectionFactory());
-			redisTemplate.setKeySerializer(new StringRedisSerializer());
-			redisTemplate.setValueSerializer(new StringRedisSerializer());
-			return redisTemplate;
-		}
+
+	@Bean("ddosRedisTemplate")
+	public RedisTemplate<String, Long> redisTemplate() {
+		RedisTemplate<String, Long> redisTemplate = new RedisTemplate<String, Long>();
+		redisTemplate.setConnectionFactory(jedisConnectionFactory());
+		redisTemplate.setKeySerializer(new StringRedisSerializer());
+		redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<Long>(Long.class));
+		return redisTemplate;
+	}
 }
