@@ -30,32 +30,29 @@ public class DDoSfilter extends OncePerRequestFilter{
     @Value("${spring.ddos.hit:10}")
     private long MAX_HIT_COUNT_PER_IP;
     
-    @Value("${spring.ddos.hit.interval:300}")
+    @Value("${spring.ddos.interval:300}")
     private long HIT_TIME_INTERVAL;
 
-    @Value("${spring.ddos.hit.blocktime:60000}")
+    @Value("${spring.ddos.blocktime:60000}")
     private long BLOCK_TIME;
 
     @Autowired
     @Qualifier("ddosRedisTemplate")
     private RedisTemplate<String, Long>  redis;
     
+    @Autowired
     private  DDoSOperator operator;
-    
-    public DDoSfilter(
-    		@Autowired  DDoSOperator operator, 
-    	    @Autowired
-    		@Qualifier("ddosRedisTemplate")  RedisTemplate<String, Long>  redis) {
-    	this.operator = operator;
-    	this.operator.setRedisTemplate(redis);
-    	logger.info("Init DDoSfilter");
+
+	public DDoSOperator getOperator() {
+		return this.operator;
 	}
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
-
-        String key = operator.generateKey(request , response);
+    	Objects.requireNonNull(redis, "RedisTemplate is null.");
+    	
+        String key = getOperator().generateKey(request , response, redis);
 
         if (key != null) {
             if ( Objects.nonNull( redis.opsForValue().get(key) ) ) {
@@ -66,7 +63,7 @@ public class DDoSfilter extends OncePerRequestFilter{
             			redis.expire(key, BLOCK_TIME, TimeUnit.MILLISECONDS);
                 	}
 
-                	operator.notifyAttack(request, response, key);
+                	 getOperator().notifyAttack(request, response, key, redis);
                     logger.warn("suspicious access for {}:hit:[{}]", key, hitCount);
                     return;
                 } else {
@@ -84,4 +81,13 @@ public class DDoSfilter extends OncePerRequestFilter{
         }
         filterChain.doFilter(request, response);
     }
+
+	@Override
+	protected void initFilterBean() throws ServletException {
+		super.initFilterBean();
+		Objects.requireNonNull( getOperator(), "Can't found Operator");
+    	logger.info("Init DDoSfilter using:[{}]", this.getOperator().getClass().getSimpleName() );
+	}
+    
+    
 }

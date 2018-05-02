@@ -15,14 +15,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 public class DefaultDDoSOperator implements DDoSOperator{
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    
-	private RedisTemplate<String, Long> redis;
-	
+
 	public DefaultDDoSOperator() {
-		logger.info("Init DefaultDDoSOperationsFilter");
+		logger.info("Init {}", this.getClass().getSimpleName());
 	}
 	@Override
-	public String generateKey(HttpServletRequest request, HttpServletResponse response) {
+	public String generateKey(HttpServletRequest request, HttpServletResponse response, RedisTemplate<String, Long> redis) {
 		String remoteAddr = request.getRemoteAddr();
 		String uri = request.getRequestURI();
 
@@ -34,7 +32,7 @@ public class DefaultDDoSOperator implements DDoSOperator{
 	}
 
 	@Override
-	public void notifyAttack(HttpServletRequest request, HttpServletResponse response, String key) {
+	public void notifyAttack(HttpServletRequest request, HttpServletResponse response, String key, RedisTemplate<String, Long> redis) {
 		try {
 //			response.sendRedirect("http://tw.yahoo.com");
 //			response.getWriter().write("you are under attack " + expireTime);
@@ -44,11 +42,6 @@ public class DefaultDDoSOperator implements DDoSOperator{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	@Override
-	public void setRedisTemplate(final RedisTemplate<String, Long> redis) {
-		this.redis = redis;
 	}
 
 }
