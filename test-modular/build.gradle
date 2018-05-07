@@ -34,7 +34,10 @@ repositories {
 dependencies {
 	compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-security'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+    
  	//compile 'com.github.yugzan.spring-kit:ddos-redis:-SNAPSHOT'
  	compile project(':ddos-redis')
+ 	compile project(':security-config')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
