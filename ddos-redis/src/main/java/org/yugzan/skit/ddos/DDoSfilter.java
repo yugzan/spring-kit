@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +24,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 @Component
 @ConditionalOnExpression("${spring.ddos.enable:true}")
-public class DDoSfilter extends OncePerRequestFilter{ 
+public class DDoSfilter extends OncePerRequestFilter implements InitializingBean{ 
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     
@@ -83,10 +84,10 @@ public class DDoSfilter extends OncePerRequestFilter{
     }
 
 	@Override
-	protected void initFilterBean() throws ServletException {
-		super.initFilterBean();
+	public void afterPropertiesSet() throws ServletException {
 		Objects.requireNonNull( getOperator(), "Can't found Operator");
     	logger.info("Init DDoSfilter using:[{}]", this.getOperator().getClass().getSimpleName() );
+		super.afterPropertiesSet();
 	}
     
     
