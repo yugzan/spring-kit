@@ -174,7 +174,7 @@ public class RetryRestTemplate {
 
   public <T> ResponseEntity<T> postForEntity(String url, Object request, Class<T> responseType,
       Object... uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> factory.create(this.readTimeout).postForObject(url,
+    return retryTemplate.execute((context) -> factory.create(this.readTimeout).postForEntity(url,
         request, responseType, uriVariables));
   }
 
