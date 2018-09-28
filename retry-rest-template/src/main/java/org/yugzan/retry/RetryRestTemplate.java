@@ -77,6 +77,7 @@ public class RetryRestTemplate {
   private InnerFunction<String, RetryContext, RestTemplate> rest = (key, context)->{
     if(isDebug) {
       logger.info("Retry [{}]:{}", key, context.getRetryCount());
+      System.out.println(String.format("Retry [%s]:%s", key, context.getRetryCount()));
     }
     return factory.create(this.readTimeout);
   };
