@@ -16,9 +16,9 @@ public class TestRetryRestTemplate {
     RetryRestTemplate rest = new RetryRestTemplate();
 
     rest.setDebug(true);
-    ResponseEntity<String> results = rest.getForEntity("http://github.com/yugzan/", String.class);
+    ResponseEntity<String> results = rest.getForEntity("https://raw.githubusercontent.com/yugzan/spring-kit/master/README.md", String.class);
     Assert.assertEquals(HttpStatus.OK,  results.getStatusCode() );
-
+    System.out.println( results.getBody() );
 
   }
 }
