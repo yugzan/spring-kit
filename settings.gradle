@@ -1,3 +1,2 @@
 include 'retry-rest-template'
 include 'ddos-redis'
-include 'test-modular'
