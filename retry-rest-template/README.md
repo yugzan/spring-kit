@@ -57,12 +57,3 @@ Build a RetryTemplate with RestTemplate
 * If you want to configuration, here has some kind for constructor 
 * RetryTemplate : configurate your retry condition.
 * RestTemplateFactory : configurate your RestTemplate generate or build own thread pool
-
-    ```java
-public interface RestTemplateFactory {
-
-  public RestTemplate create();
-
-  public void setReadTimeout(int readTimeout);
-}
-    ```
