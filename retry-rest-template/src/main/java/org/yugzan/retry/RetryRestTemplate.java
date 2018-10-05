@@ -38,16 +38,18 @@ public class RetryRestTemplate {
   
   private boolean isDebug = false;
 
-  private int readTimeout = RestTemplateFactory.READ_TIMEOUT;
+  private int readTimeout = DefaultRestTemplateFactory.DEFAULT_READ_TIMEOUT;
 
   public RetryRestTemplate() {
     this.retryTemplate = createDefaultRetryTemplate();
-    this.factory = new RestTemplateFactory();
+    this.factory = new DefaultRestTemplateFactory();
+    this.factory.setReadTimeout(readTimeout);
   }
 
   public RetryRestTemplate(RetryTemplate retryTemplate) {
     this.retryTemplate = retryTemplate;
-    this.factory = new RestTemplateFactory();
+    this.factory = new DefaultRestTemplateFactory();
+    this.factory.setReadTimeout(readTimeout);
   }
   
   public RetryRestTemplate(RetryTemplate retryTemplate, RestTemplateFactory factory) {
@@ -80,7 +82,7 @@ public class RetryRestTemplate {
       logger.info("Retry [{}]:{}", key, context.getRetryCount());
       System.out.println(String.format("Retry [%s]:%s", key, context.getRetryCount()));
     }
-    return factory.create(this.readTimeout);
+    return factory.create();
   };
   
   private Function<RetryContext, RestTemplate> get = (context)-> rest.apply("GET", context);
