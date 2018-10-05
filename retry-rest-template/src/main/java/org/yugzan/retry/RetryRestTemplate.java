@@ -25,7 +25,8 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * @author yongzan
- * @date 2018/09/20 warp implementation {@link RestOperations} to do RetryTemplate
+ *  2018/09/20 
+ *  warp implementation {@link RestOperations} to do RetryTemplate
  */
 public class RetryRestTemplate {
 

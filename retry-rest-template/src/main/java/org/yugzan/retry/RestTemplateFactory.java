@@ -15,7 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * @author yongzan
- * @date 2018/08/29
+ *  2018/08/29
  */
 
 public class RestTemplateFactory {

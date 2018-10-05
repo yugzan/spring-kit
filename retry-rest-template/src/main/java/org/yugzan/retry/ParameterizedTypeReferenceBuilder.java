@@ -6,7 +6,7 @@ import com.google.common.reflect.TypeToken;
 
 /**
  * @author yongzan
- * @date 2018/09/27
+ *  2018/09/27
  *  https://stackoverflow.com/questions/21987295/using-spring-resttemplate-in-generic-method-with-generic-parameter/29547365#29547365
  */
 public class ParameterizedTypeReferenceBuilder {
