@@ -1,6 +1,6 @@
 allprojects {
 	group = 'com.github.yugzan'
-	version = "1.0.2"
+	version = "1.0.3"
 	if (JavaVersion.current().isJava8Compatible()) {
 	        tasks.withType(Javadoc) {
 		options.addBooleanOption('Xdoclint:none', true)

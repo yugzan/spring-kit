@@ -1,6 +1,6 @@
 [![Release](https://jitpack.io/v/yugzan/spring-kit.svg)](https://jitpack.io/#yugzan/spring-kit)
 
-Spring Kit - RetryRest Template 1.0.2
+Spring Kit - RetryRest Template 1.0.3
 --------------------
 Build a RetryTemplate with RestTemplate
 

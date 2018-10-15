@@ -3,7 +3,6 @@ package org.yugzan.retry;
 import java.net.URI;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import org.apache.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +23,7 @@ import org.springframework.web.client.RestTemplate;
 
 
 /**
- * @author yongzan
- *  2018/09/20 
- *  warp implementation {@link RestOperations} to do RetryTemplate
+ * @author yongzan 2018/09/20 warp implementation {@link RestOperations} to do RetryTemplate
  */
 public class RetryRestTemplate {
 
@@ -35,7 +32,7 @@ public class RetryRestTemplate {
   private RetryTemplate retryTemplate;
 
   private RestTemplateFactory factory;
-  
+
   private boolean isDebug = false;
 
   private int readTimeout = DefaultRestTemplateFactory.DEFAULT_READ_TIMEOUT;
@@ -51,7 +48,7 @@ public class RetryRestTemplate {
     this.factory = new DefaultRestTemplateFactory();
     this.factory.setReadTimeout(readTimeout);
   }
-  
+
   public RetryRestTemplate(RetryTemplate retryTemplate, RestTemplateFactory factory) {
     this.retryTemplate = retryTemplate;
     this.factory = factory;
@@ -75,22 +72,26 @@ public class RetryRestTemplate {
 
   @FunctionalInterface
   private interface InnerFunction<S, C, R> {
-      public R apply(S string, C retryContext);
+    public R apply(S string, C retryContext);
   }
-  private InnerFunction<String, RetryContext, RestTemplate> rest = (key, context)->{
-    if(isDebug) {
+
+  private InnerFunction<String, RetryContext, RestTemplate> rest = (key, context) -> {
+    if (isDebug) {
       logger.info("Retry [{}]:{}", key, context.getRetryCount());
+
       System.out.println(String.format("Retry [%s]:%s", key, context.getRetryCount()));
     }
     return factory.create();
   };
-  
-  private Function<RetryContext, RestTemplate> get = (context)-> rest.apply("GET", context);
-  private Function<RetryContext, RestTemplate> post = (context)-> rest.apply("POST", context);
-  private Function<RetryContext, RestTemplate> patch = (context)-> rest.apply("PATCH", context);
-  private Function<RetryContext, RestTemplate> put = (context)-> rest.apply("PUT", context);
-  private Function<RetryContext, RestTemplate> delete = (context)-> rest.apply("DELETE", context);
-  
+  private final static String EXCUTE_INFO = "%s|%s";
+  private final static String GET = "GET|%s";
+  private final static String POST = "POST|%s";
+  private final static String PATCH = "PATCH|%s";
+  private final static String PUT = "PUT|%s";
+  private final static String DELETE = "DELETE|%s";
+  private final static String HEAD = "HEAD|%s";
+
+
   public RetryTemplate createDefaultRetryTemplate() {
     RetryTemplate retryTemplate = new RetryTemplate();
     SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
@@ -104,129 +105,134 @@ public class RetryRestTemplate {
 
   public <T> ResponseEntity<T> get(String url, HttpEntity<?> entity, Class<T> responseType)
       throws HttpException {
-    return retryTemplate.execute((context) -> get.apply(context).exchange(url,HttpMethod.GET, entity, responseType));
+    return retryTemplate.execute((context) -> rest.apply(String.format(GET, url), context)
+        .exchange(url, HttpMethod.GET, entity, responseType));
   }
 
   public <T> T post(String url, Object entity, Class<T> responseType) throws HttpException {
-    return retryTemplate.execute(
-        (context) ->post.apply(context).postForObject(url, entity, responseType));
+    return retryTemplate.execute((context) -> rest.apply(String.format(POST, url), context)
+        .postForObject(url, entity, responseType));
   }
 
   public <T> T getForObject(String url, Class<T> responseType, Object... uriVariables)
       throws RestClientException {
-    return retryTemplate.execute((context) -> get.apply(context).getForObject(url, responseType, uriVariables));
+
+    return retryTemplate.execute((context) -> rest.apply(String.format(GET, url), context)
+        .getForObject(url, responseType, uriVariables));
   }
 
 
   public <T> T getForObject(String url, Class<T> responseType, Map<String, ?> uriVariables)
       throws RestClientException {
-    return retryTemplate.execute((context) -> get.apply(context).getForObject(url,
-        responseType, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(GET, url), context)
+        .getForObject(url, responseType, uriVariables));
   }
 
   public <T> T getForObject(URI url, Class<T> responseType) throws RestClientException {
-    return retryTemplate
-        .execute((context) -> get.apply(context).getForObject(url, responseType));
+
+    return retryTemplate.execute(
+        (context) -> rest.apply(String.format(GET, url), context).getForObject(url, responseType));
   }
 
   public <T> ResponseEntity<T> getForEntity(String url, Class<T> responseType,
       Object... uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> get.apply(context).getForEntity(url,
-        responseType, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(GET, url), context)
+        .getForEntity(url, responseType, uriVariables));
   }
 
   public <T> ResponseEntity<T> getForEntity(String url, Class<T> responseType,
       Map<String, ?> uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> get.apply(context).getForEntity(url,
-        responseType, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(GET, url), context)
+        .getForEntity(url, responseType, uriVariables));
   }
 
   public <T> ResponseEntity<T> getForEntity(URI url, Class<T> responseType)
       throws RestClientException {
-    return retryTemplate
-        .execute((context) -> get.apply(context).getForEntity(url, responseType));
+    return retryTemplate.execute(
+        (context) -> rest.apply(String.format(GET, url), context).getForEntity(url, responseType));
   }
 
   public HttpHeaders headForHeaders(String url, Object... uriVariables) throws RestClientException {
-    return retryTemplate
-        .execute((context) -> rest.apply("HEAD", context).headForHeaders(url, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(HEAD, url), context)
+        .headForHeaders(url, uriVariables));
   }
 
   public HttpHeaders headForHeaders(String url, Map<String, ?> uriVariables)
       throws RestClientException {
-    return retryTemplate
-        .execute((context) ->  rest.apply("HEAD", context).headForHeaders(url, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(HEAD, url), context)
+        .headForHeaders(url, uriVariables));
   }
 
   public HttpHeaders headForHeaders(URI url) throws RestClientException {
-    return retryTemplate.execute((context) ->  rest.apply("HEAD", context).headForHeaders(url));
+    return retryTemplate
+        .execute((context) -> rest.apply(String.format(HEAD, url), context).headForHeaders(url));
   }
 
 
   public URI postForLocation(String url, Object request, Object... uriVariables)
       throws RestClientException {
-    return retryTemplate.execute(
-        (context) -> post.apply(context).postForLocation(url, request, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(POST, url), context)
+        .postForLocation(url, request, uriVariables));
   }
 
 
   public URI postForLocation(String url, Object request, Map<String, ?> uriVariables)
       throws RestClientException {
-    return retryTemplate.execute(
-        (context) -> post.apply(context).postForLocation(url, request, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(POST, url), context)
+        .postForLocation(url, request, uriVariables));
   }
 
 
   public URI postForLocation(URI url, Object request) throws RestClientException {
-    return retryTemplate
-        .execute((context) -> post.apply(context).postForLocation(url, request));
+    return retryTemplate.execute(
+        (context) -> rest.apply(String.format(POST, url), context).postForLocation(url, request));
   }
 
 
   public <T> T postForObject(String url, Object request, Class<T> responseType,
       Object... uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> post.apply(context).postForObject(url,
-        request, responseType, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(POST, url), context)
+        .postForObject(url, request, responseType, uriVariables));
   }
 
 
   public <T> T postForObject(String url, Object request, Class<T> responseType,
       Map<String, ?> uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> post.apply(context).postForObject(url,
-        request, responseType, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(POST, url), context)
+        .postForObject(url, request, responseType, uriVariables));
   }
 
 
   public <T> T postForObject(URI url, Object request, Class<T> responseType)
       throws RestClientException {
-    return retryTemplate.execute(
-        (context) -> post.apply(context).postForObject(url, request, responseType));
+    return retryTemplate.execute((context) -> rest.apply(String.format(POST, url), context)
+        .postForObject(url, request, responseType));
   }
 
 
   public <T> ResponseEntity<T> postForEntity(String url, Object request, Class<T> responseType,
       Object... uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> post.apply(context).postForEntity(url,
-        request, responseType, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(POST, url), context)
+        .postForEntity(url, request, responseType, uriVariables));
   }
 
 
   public <T> ResponseEntity<T> postForEntity(String url, Object request, Class<T> responseType,
       Map<String, ?> uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> post.apply(context).postForEntity(url,
-        request, responseType, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(POST, url), context)
+        .postForEntity(url, request, responseType, uriVariables));
   }
 
 
   public <T> ResponseEntity<T> postForEntity(URI url, Object request, Class<T> responseType)
       throws RestClientException {
-    return retryTemplate.execute(
-        (context) -> post.apply(context).postForEntity(url, request, responseType));
+    return retryTemplate.execute((context) -> rest.apply(String.format(POST, url), context)
+        .postForEntity(url, request, responseType));
   }
 
   public void put(String url, Object request, Object... uriVariables) throws RestClientException {
     retryTemplate.execute((context) -> {
-      put.apply(context).put(url, request, uriVariables);
+      rest.apply(String.format(PUT, url), context).put(url, request, uriVariables);
       return null;
     });
   }
@@ -235,7 +241,7 @@ public class RetryRestTemplate {
   public void put(String url, Object request, Map<String, ?> uriVariables)
       throws RestClientException {
     retryTemplate.execute((context) -> {
-      put.apply(context).put(url, request, uriVariables);
+      rest.apply(String.format(PUT, url), context).put(url, request, uriVariables);
       return null;
     });
   }
@@ -243,7 +249,7 @@ public class RetryRestTemplate {
 
   public void put(URI url, Object request) throws RestClientException {
     retryTemplate.execute((context) -> {
-      put.apply(context).put(url, request);
+      rest.apply(String.format(PUT, url), context).put(url, request);
       return null;
     });
   }
@@ -251,28 +257,28 @@ public class RetryRestTemplate {
 
   public <T> T patchForObject(String url, Object request, Class<T> responseType,
       Object... uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> patch.apply(context).patchForObject(url,
-        request, responseType, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(PATCH, url), context)
+        .patchForObject(url, request, responseType, uriVariables));
   }
 
 
   public <T> T patchForObject(String url, Object request, Class<T> responseType,
       Map<String, ?> uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> patch.apply(context).patchForObject(url,
-        request, responseType, uriVariables));
+    return retryTemplate.execute((context) -> rest.apply(String.format(PATCH, url), context)
+        .patchForObject(url, request, responseType, uriVariables));
   }
 
 
   public <T> T patchForObject(URI url, Object request, Class<T> responseType)
       throws RestClientException {
-    return retryTemplate.execute(
-        (context) -> patch.apply(context).patchForObject(url, request, responseType));
+    return retryTemplate.execute((context) -> rest.apply(String.format(PATCH, url), context)
+        .patchForObject(url, request, responseType));
   }
 
 
   public void delete(String url, Object... uriVariables) throws RestClientException {
     retryTemplate.execute((context) -> {
-      delete.apply(context).delete(url, uriVariables);
+      rest.apply(String.format(DELETE, url), context).delete(url, uriVariables);
       return null;
     });
   }
@@ -280,7 +286,7 @@ public class RetryRestTemplate {
 
   public void delete(String url, Map<String, ?> uriVariables) throws RestClientException {
     retryTemplate.execute((context) -> {
-      delete.apply(context).delete(url, uriVariables);
+      rest.apply(String.format(DELETE, url), context).delete(url, uriVariables);
       return null;
     });
   }
@@ -288,7 +294,7 @@ public class RetryRestTemplate {
 
   public void delete(URI url) throws RestClientException {
     retryTemplate.execute((context) -> {
-      delete.apply(context).delete(url);
+      rest.apply(String.format(DELETE, url), context).delete(url);
       return null;
     });
   }
@@ -296,100 +302,115 @@ public class RetryRestTemplate {
 
   public Set<HttpMethod> optionsForAllow(String url, Object... uriVariables)
       throws RestClientException {
-    return retryTemplate
-        .execute((context) -> rest.apply("optionsForAllow", context).optionsForAllow(url, uriVariables));
+    return retryTemplate.execute(
+        (context) -> rest.apply(String.format(EXCUTE_INFO, "optionsForAllow", url), context)
+            .optionsForAllow(url, uriVariables));
   }
 
 
   public Set<HttpMethod> optionsForAllow(String url, Map<String, ?> uriVariables)
       throws RestClientException {
-    return retryTemplate
-        .execute((context) -> rest.apply("optionsForAllow", context).optionsForAllow(url, uriVariables));
+    return retryTemplate.execute(
+        (context) -> rest.apply(String.format(EXCUTE_INFO, "optionsForAllow", url), context)
+            .optionsForAllow(url, uriVariables));
   }
 
   public Set<HttpMethod> optionsForAllow(URI url) throws RestClientException {
-    return retryTemplate
-        .execute((context) -> rest.apply("optionsForAllow", context).optionsForAllow(url));
+    return retryTemplate.execute((context) -> rest
+        .apply(String.format(EXCUTE_INFO, "optionsForAllow", url), context).optionsForAllow(url));
   }
 
 
   public <T> ResponseEntity<T> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity,
       Class<T> responseType, Object... uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> rest.apply(method.toString(), context).exchange(url, method,
-        requestEntity, responseType, uriVariables));
+    return retryTemplate
+        .execute((context) -> rest.apply(String.format(EXCUTE_INFO, method, url), context)
+            .exchange(url, method, requestEntity, responseType, uriVariables));
   }
 
 
   public <T> ResponseEntity<T> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity,
       Class<T> responseType, Map<String, ?> uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> rest.apply(method.toString(), context).exchange(url, method,
-        requestEntity, responseType, uriVariables));
+    return retryTemplate
+        .execute((context) -> rest.apply(String.format(EXCUTE_INFO, method, url), context)
+            .exchange(url, method, requestEntity, responseType, uriVariables));
   }
 
 
   public <T> ResponseEntity<T> exchange(URI url, HttpMethod method, HttpEntity<?> requestEntity,
       Class<T> responseType) throws RestClientException {
-    return retryTemplate.execute((context) -> rest.apply(method.toString(), context).exchange(url, method,
-        requestEntity, responseType));
+    return retryTemplate
+        .execute((context) -> rest.apply(String.format(EXCUTE_INFO, method, url), context)
+            .exchange(url, method, requestEntity, responseType));
   }
 
 
   public <T> ResponseEntity<T> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity,
       ParameterizedTypeReference<T> responseType, Object... uriVariables)
       throws RestClientException {
-    return retryTemplate.execute((context) -> rest.apply(method.toString(), context).exchange(url, method,
-        requestEntity, responseType, uriVariables));
+    return retryTemplate
+        .execute((context) -> rest.apply(String.format(EXCUTE_INFO, method, url), context)
+            .exchange(url, method, requestEntity, responseType, uriVariables));
   }
 
 
   public <T> ResponseEntity<T> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity,
       ParameterizedTypeReference<T> responseType, Map<String, ?> uriVariables)
       throws RestClientException {
-    return retryTemplate.execute((context) -> rest.apply(method.toString(), context).exchange(url, method,
-        requestEntity, responseType, uriVariables));
+    return retryTemplate
+        .execute((context) -> rest.apply(String.format(EXCUTE_INFO, method, url), context)
+            .exchange(url, method, requestEntity, responseType, uriVariables));
   }
 
 
   public <T> ResponseEntity<T> exchange(URI url, HttpMethod method, HttpEntity<?> requestEntity,
       ParameterizedTypeReference<T> responseType) throws RestClientException {
-    return retryTemplate.execute((context) -> rest.apply(method.toString(), context).exchange(url, method,
-        requestEntity, responseType));
+    return retryTemplate
+        .execute((context) -> rest.apply(String.format(EXCUTE_INFO, method, url), context)
+            .exchange(url, method, requestEntity, responseType));
   }
 
 
   public <T> ResponseEntity<T> exchange(RequestEntity<?> requestEntity, Class<T> responseType)
       throws RestClientException {
-    return retryTemplate.execute(
-        (context) -> rest.apply(requestEntity.getMethod().toString(), context).exchange(requestEntity, responseType));
+    return retryTemplate.execute((context) -> rest
+        .apply(String.format(EXCUTE_INFO, requestEntity.getMethod(), requestEntity.getUrl()),
+            context)
+        .exchange(requestEntity, responseType));
   }
 
 
   public <T> ResponseEntity<T> exchange(RequestEntity<?> requestEntity,
       ParameterizedTypeReference<T> responseType) throws RestClientException {
-    return retryTemplate.execute(
-        (context) -> rest.apply(requestEntity.getMethod().toString(), context).exchange(requestEntity, responseType));
+    return retryTemplate.execute((context) -> rest
+        .apply(String.format(EXCUTE_INFO, requestEntity.getMethod(), requestEntity.getUrl()),
+            context)
+        .exchange(requestEntity, responseType));
   }
-
 
   public <T> T execute(String url, HttpMethod method, RequestCallback requestCallback,
       ResponseExtractor<T> responseExtractor, Object... uriVariables) throws RestClientException {
-    return retryTemplate.execute((context) -> rest.apply(method.toString(), context).execute(url, method,
-        requestCallback, responseExtractor, uriVariables));
+
+    return retryTemplate.execute(
+        (context) -> rest.apply(String.format(EXCUTE_INFO, method.toString(), url), context)
+            .execute(url, method, requestCallback, responseExtractor, uriVariables));
   }
 
 
   public <T> T execute(String url, HttpMethod method, RequestCallback requestCallback,
       ResponseExtractor<T> responseExtractor, Map<String, ?> uriVariables)
       throws RestClientException {
-    return retryTemplate.execute((context) -> rest.apply(method.toString(), context).execute(url, method,
-        requestCallback, responseExtractor, uriVariables));
+    return retryTemplate.execute(
+        (context) -> rest.apply(String.format(EXCUTE_INFO, method.toString(), url), context)
+            .execute(url, method, requestCallback, responseExtractor, uriVariables));
   }
 
 
   public <T> T execute(URI url, HttpMethod method, RequestCallback requestCallback,
       ResponseExtractor<T> responseExtractor) throws RestClientException {
-    return retryTemplate.execute((context) -> rest.apply(method.toString(), context).execute(url, method,
-        requestCallback, responseExtractor));
+    return retryTemplate.execute(
+        (context) -> rest.apply(String.format(EXCUTE_INFO, method.toString(), url), context)
+            .execute(url, method, requestCallback, responseExtractor));
   }
 
 }
